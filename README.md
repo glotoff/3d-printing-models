@@ -139,29 +139,115 @@ docker compose up -d --build
 
 ---
 
+---
+
+## Fresh Laptop Setup Guide (Zero to Ready)
+
+If you clone this repository onto a brand-new computer, here is exactly what to install and how to work with the project files:
+
+### 1. Requirements Checklist
+
+| Software / Tool | Purpose | How to Get |
+| :--- | :--- | :--- |
+| **Git** | Cloning & updating the repository | [git-scm.com](https://git-scm.com/) |
+| **Python 3.10+** | CLI telemetry scripts & running the local web app | [python.org](https://www.python.org/) or `winget install Python.Python.3.12` |
+| **OrcaSlicer (v2.x+)** | Slicing models & sending prints to Flashforge / Klipper | [github.com/SoftFever/OrcaSlicer/releases](https://github.com/SoftFever/OrcaSlicer/releases) |
+| **Autodesk Fusion 360** *(Optional for CAD editing)* | Inspecting or modifying the native parametric model | [autodesk.com/products/fusion-360](https://www.autodesk.com/products/fusion-360/personal) |
+| **Docker Desktop** *(Optional for telemetry web dashboard)* | Containerized web dashboard deployment | [docker.com](https://www.docker.com/) |
+
+---
+
+### 2. Workflow: 3D Printing (Ready Out of the Box)
+
+You do **not** need CAD software installed just to slice or print:
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/glotoff/3d-printing-models.git
+   cd 3d-printing-models
+   ```
+2. **Open in OrcaSlicer:**
+   - Double-click [`Modular_SingleBay_16mm_M3.3mf`](Modular_SingleBay_16mm_M3.3mf).
+   - This opens the exact project with all tuned print settings:
+     - 4 wall loops (1.6 mm solid shell)
+     - 15% infill
+     - 0.20 mm layer height
+     - Flashforge Adventurer 5M Pro profile
+   - Click **Slice plate** and send directly to your printer over Wi-Fi.
+3. **Alternatively, use the pre-sliced G-code directly:**
+   - [`Modular_SingleBay_SplitPins_7mm_PLA_1h18m.gcode`](Modular_SingleBay_SplitPins_7mm_PLA_1h18m.gcode) can be loaded directly onto a USB stick or uploaded via Flashforge web UI.
+
+---
+
+### 3. Workflow: CAD Modeling & Editing in Autodesk Fusion 360
+
+If you want to edit, customize, or export variations in Fusion 360:
+
+#### Option A: Open the Standalone `.f3d` Archive (Easiest)
+1. Open **Autodesk Fusion 360**.
+2. Click **File** $\to$ **Open...** $\to$ **Open from my computer**.
+3. Select [`cad/Modular_SingleBay_Vent10mm_SplitPins.f3d`](cad/Modular_SingleBay_Vent10mm_SplitPins.f3d).
+4. All bodies (caddy body and hard drive reference mock-up) and geometry will load natively.
+
+#### Option B: Import the Universal `.step` File
+- In Fusion 360 (or FreeCAD / SolidWorks), go to **File** $\to$ **Open** $\to$ select [`cad/Modular_SingleBay_Vent10mm_SplitPins.step`](cad/Modular_SingleBay_Vent10mm_SplitPins.step).
+
+#### Option C: Re-generate From Python Script (Parametric Automation)
+1. In Fusion 360, press **Shift + S** to open the **Scripts and Add-Ins** window.
+2. Under the **Scripts** tab, click the green **+** icon (Create / Add).
+3. Select or paste the contents of [`cad/generate_fusion360_model.py`](cad/generate_fusion360_model.py).
+4. Click **Run**. The script will automatically generate the 3D model, apply all cutouts and split guide pins, insert the hard drive verification body, and export the high-res STL mesh.
+
+---
+
+### 4. Workflow: Printer Monitoring & Telemetry
+
+1. **Instant CLI Status:**
+   ```bash
+   pip install requests
+   python print_status.py          # One-shot terminal status snapshot
+   python print_status.py --watch  # Auto-refreshing HUD (every 5s)
+   ```
+
+2. **Web Monitoring App (Local or Docker):**
+   - **Running locally with Python:**
+     ```bash
+     cd app
+     pip install -r requirements.txt
+     python -m uvicorn main:app --host 0.0.0.0 --port 4000
+     ```
+   - **Running with Docker:**
+     ```bash
+     cd app
+     docker compose up -d --build
+     ```
+   - Open your browser to `http://localhost:4000/`.
+
+---
+
 ## Repository Structure
 
 ```
 .
-├── app/                                  # Real-time web telemetry dashboard
+├── app/                                            # Real-time web telemetry dashboard
 │   ├── Dockerfile
 │   ├── docker-compose.yml
-│   ├── main.py                           # FastAPI + WebSocket backend & camera proxy
+│   ├── main.py                                     # FastAPI + WebSocket backend & camera proxy
 │   ├── requirements.txt
 │   └── templates/
-│       └── index.html                    # Dark-mode dashboard with Tailwind CSS
+│       └── index.html                              # Dark-mode dashboard with Tailwind CSS
 ├── cad/
-│   ├── modular_single_bay_70mm.scad      # Parametric OpenSCAD source with 4 guide pins
-│   ├── generate_fusion360_model.py       # Parametric Fusion 360 API generator
-│   └── fusion_client.py                  # Direct JSON-RPC client for Fusion MCP
+│   ├── Modular_SingleBay_Vent10mm_SplitPins.f3d   # Standalone native Autodesk Fusion 360 archive
+│   ├── Modular_SingleBay_Vent10mm_SplitPins.step  # Universal CAD solid exchange model
+│   └── generate_fusion360_model.py                 # Parametric Fusion 360 API generator
 ├── models/
-│   └── Modular_SingleBay_70mm_Tight.stl  # Production STL model (89.0 x 32.8 x 70.0 mm)
-├── gcode/
-│   └── Modular_SingleBay_70mm_Tight.gcode # Print-ready G-code (Adventurer 5M Pro)
-├── images/                               # 3D viewport renders and slicer plate preview
-├── legacy/                               # Previous prototype iterations and test models
-├── Modular_SingleBay_16mm_M3.3mf         # OrcaSlicer active project file
-├── print_status.py                       # CLI printer telemetry script
+│   └── Modular_SingleBay_70mm_Tight.stl            # Production STL model (89.0 x 32.8 x 70.0 mm)
+├── Modular_SingleBay_SplitPins_7mm_PLA_1h18m.gcode # Print-ready G-code (Adventurer 5M Pro)
+├── Modular_SingleBay_16mm_M3.3mf                   # OrcaSlicer complete project file
+├── print_status.py                                 # CLI printer telemetry script
+├── images/                                         # 3D viewport renders and slicer plate previews
+├── legacy/                                         # Previous prototype iterations and test models
 ├── .gitignore
 └── README.md
 ```
+
