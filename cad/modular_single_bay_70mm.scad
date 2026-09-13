@@ -1,5 +1,5 @@
 // ==============================================================================
-// Modular Single-Bay HDD / SSD Caddy (70mm Tall, Snug 74mm Depth)
+// Modular Single-Bay HDD / SSD Caddy (70mm Tall, Exact 78x14mm Drive Fit)
 // Parametric OpenSCAD Model for Git Version Control and Change Tracking
 // ==============================================================================
 
@@ -7,12 +7,16 @@ $fn = 60;
 
 // --- PARAMETERS (All dimensions in mm) ---
 
-// Enclosure / Drive Slot Dimensions
-drive_d         = 74.0;  // Internal slot length (X axis) - snug fit for enclosure
-drive_t         = 16.0;  // Nominal drive thickness
-slot_t          = 16.5;  // Internal slot width (Y axis) - 0.5mm total clearance
+// Hard Drive Dimensions
+drive_w         = 78.0;  // Drive width (X axis)
+drive_t         = 14.0;  // Drive depth / thickness (Y axis)
+drive_h         = 125.0; // Drive upright height (Z axis)
+
+// Internal Slot Dimensions
+slot_l          = 79.0;  // Internal slot length (X axis) - 0.5mm clearance each end
+slot_t          = 14.8;  // Internal slot width (Y axis) - 0.4mm clearance each side (snug upright fit)
 caddy_h         = 70.0;  // Total height (Z axis)
-wall_t          = 4.0;   // Side wall thickness (Y axis)
+wall_t          = 4.0;   // Solid side wall thickness (Y axis)
 base_t          = 3.5;   // Bottom floor thickness (Z axis)
 front_lip       = 5.0;   // Solid front pillar length (X axis)
 rear_lip        = 5.0;   // Solid rear pillar length (X axis)
@@ -23,20 +27,20 @@ window_z_bot    = 7.5;   // Window bottom Z coordinate
 window_z_top    = 65.0;  // Window top Z coordinate
 
 // Derived Module Dimensions
-mod_w           = slot_t + 2 * wall_t;            // 24.5 mm total width
-mod_l           = drive_d + front_lip + rear_lip; // 84.0 mm total length
-window_w        = slot_t - 2 * lip_t;             // 12.5 mm window opening width
+mod_w           = slot_t + 2 * wall_t;           // 22.8 mm total width
+mod_l           = slot_l + front_lip + rear_lip; // 89.0 mm total length
+window_w        = slot_t - 2 * lip_t;            // 10.8 mm window opening width
 
 // M3 Joining Hardware Parameters
-z_screws        = [20.0, 55.0]; // Mounting hole heights
-x_screw_front   = front_lip / 2.0;                // 2.5 mm
-x_screw_rear    = front_lip + drive_d + rear_lip / 2.0; // 81.5 mm
+z_screws        = [20.0, 55.0]; // Dual mounting hole heights
+x_screw_front   = front_lip / 2.0;               // 2.5 mm
+x_screw_rear    = front_lip + slot_l + rear_lip / 2.0; // 86.5 mm
 m3_hole_dia     = 3.4;   // Clearance through-hole diameter
 m3_washer_dia   = 7.5;   // Inside counterbore diameter (for DIN 125 washer + screw head)
 m3_washer_depth = 2.5;   // Inside counterbore depth
 m3_nut_f2f      = 5.6;   // Captive hex nut pocket width across flats
 m3_nut_depth    = 2.6;   // Captive hex nut pocket depth
-nut_washer_depth= 0.8;   // Optional washer recess on nut side
+nut_washer_depth= 0.8;   // Inside washer recess on nut side
 
 // Honeycomb Lattice Parameters
 hex_r           = 4.6;   // Hexagon circumradius
@@ -61,28 +65,28 @@ module caddy_body() {
 
         // 2. Drive Slot Pocket
         translate([front_lip, wall_t, base_t])
-            cube([drive_d + 0.1, slot_t, caddy_h]);
+            cube([slot_l + 0.1, slot_t, caddy_h]);
 
         // 3. Bottom Chimney Vent (through floor)
         translate([front_lip + 8.0, wall_t + lip_t, -1])
-            cube([drive_d - 16.0, slot_t - 2 * lip_t, base_t + 2]);
+            cube([slot_l - 16.0, slot_t - 2 * lip_t, base_t + 2]);
 
         // 4. Front Vertical Window
         translate([-1, wall_t + lip_t, window_z_bot])
             cube([front_lip + 2, window_w, window_z_top - window_z_bot]);
 
         // 5. Rear Vertical Window
-        translate([front_lip + drive_d - 1, wall_t + lip_t, window_z_bot])
+        translate([front_lip + slot_l - 1, wall_t + lip_t, window_z_bot])
             cube([rear_lip + 2, window_w, window_z_top - window_z_bot]);
 
-        // 6. Honeycomb Lattice on Side Walls
+        // 6. Honeycomb Lattice on Side Walls (7 rows)
         for (row = [0:6]) {
             z_c = 13.5 + row * hex_dz;
             x_shift = (row % 2 == 1) ? (hex_dx / 2.0) : 0.0;
-            for (col = [0:7]) {
-                x_c = front_lip + 8.5 + col * hex_dx + x_shift;
+            for (col = [0:8]) {
+                x_c = front_lip + 7.5 + col * hex_dx + x_shift;
                 if (x_c >= (front_lip + 5.5) && 
-                    x_c <= (front_lip + drive_d - 5.5) && 
+                    x_c <= (front_lip + slot_l - 5.5) && 
                     (z_c + hex_r) <= (caddy_h - 4.5)) {
                     translate([x_c, -1, z_c])
                         rotate([-90, 0, 0])
@@ -108,14 +112,14 @@ module caddy_body() {
                     cylinder(d = m3_washer_dia, h = m3_washer_depth + 0.1);
 
                 // C. Inside Hex Nut Pocket (Right Pillar)
-                // Inside face of right pillar is at Y = wall_t + slot_t - lip_t (18.5 mm)
-                // Cuts outward (towards +Y) by 2.6 mm (up to Y = 21.1 mm).
-                // Outer face at Y = 24.5 mm remains 100% FLAT with 3.4 mm solid wall!
+                // Inside face of right pillar is at Y = wall_t + slot_t - lip_t (16.8 mm)
+                // Cuts outward (towards +Y) by 2.6 mm (up to Y = 19.4 mm).
+                // Outer face at Y = 22.8 mm remains 100% FLAT with 3.4 mm solid wall!
                 translate([xs, wall_t + slot_t - lip_t - 0.05, zs])
                     rotate([-90, 0, 0])
                     hex_nut_pocket(m3_nut_f2f, m3_nut_depth + 0.1);
 
-                // D. Optional Inside Washer Recess on Nut Side
+                // D. Inside Washer Recess on Nut Side
                 translate([xs, wall_t + slot_t - lip_t - 0.05, zs])
                     rotate([-90, 0, 0])
                     cylinder(d = m3_washer_dia, h = nut_washer_depth + 0.1);
