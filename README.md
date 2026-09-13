@@ -42,6 +42,30 @@ A modular, linkable 3D-printable dock tailored specifically for **$78\text{ mm} 
 
 ---
 
+## Multi-Bay Stacking Guide
+
+Modules are daisy-chained side-by-side:
+
+```
+       [Bay 1]                  [Bay 2]
++--------------------+   +--------------------+
+|  (Inside Bay 1)    |   |  (Inside Bay 2)    |
+|                    |   |                    |
+|  [Screw + Washer]  |   |    [M3 Hex Nut]    |
+|         |          |   |          ^         |
+|         +==========>===>==========+         |
+|         4mm wall   |   |   4mm wall         |
++--------------------+   +--------------------+
+     Flat Mating Joint: 8mm total solid plastic
+```
+
+1. Align the flat right exterior wall of Bay 1 with the flat left exterior wall of Bay 2.
+2. From **inside Bay 1**, pass an M3 screw with an M3 washer through the inside counterbore.
+3. In **inside Bay 2**, thread the screw into the captive M3 hex nut.
+4. Tighten with a hex key from inside Bay 1. Both screw head and nut are recessed flush inside the respective window frames, leaving the drive pocket completely clear!
+
+---
+
 ## Bill of Materials (BOM) per Joint
 
 To connect two adjacent bays:
@@ -97,6 +121,7 @@ Binary 3D models (`.stl`, `.3mf`, `.f3d`) cannot be diffed cleanly in Git. This 
 │   └── Modular_SingleBay_70mm_Tight.gcode # Print-ready G-code (Adventurer 5M Pro)
 ├── images/                               # 3D viewport renders and slicer plate preview
 ├── legacy/                               # Previous prototype iterations and test models
+├── Modular_SingleBay_16mm_M3.3mf         # OrcaSlicer active project file
 ├── .gitignore
 └── README.md
 ```
