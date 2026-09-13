@@ -1,0 +1,17 @@
+# OS & editor artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Slicer temporary and log files
+*.log
+*.tmp
+*.bak
+.orcaslicer-mcp/
+
+# Python cache
+__pycache__/
+*.py[cod]
