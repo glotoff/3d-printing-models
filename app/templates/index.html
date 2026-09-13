@@ -119,7 +119,10 @@
           <div class="mb-6">
             <div class="flex items-baseline justify-between mb-2">
               <span class="text-xs font-semibold uppercase text-slate-400">Total Progress</span>
-              <span id="progress-text" class="text-3xl font-extrabold text-cyan-400 font-mono tracking-tight">0%</span>
+              <div class="flex items-baseline space-x-2">
+                <span id="progress-text" class="text-3xl font-extrabold text-cyan-400 font-mono tracking-tight">0%</span>
+                <span id="progress-rem-pill" class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">-- left</span>
+              </div>
             </div>
             <!-- Progress Bar -->
             <div class="w-full bg-slate-950 rounded-full h-3.5 p-0.5 border border-slate-800 overflow-hidden">
@@ -138,23 +141,29 @@
               </div>
             </div>
             <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
-              <span class="text-xs text-slate-400 uppercase tracking-wide block mb-1">Extruded Filament (A)</span>
-              <div class="text-lg font-bold font-mono text-slate-100">
-                <span id="filament-a" class="text-indigo-400">0.0</span> <span class="text-xs font-normal text-slate-400">mm</span>
+              <span class="text-xs text-slate-400 uppercase tracking-wide block mb-1">Time Remaining</span>
+              <div class="text-lg font-bold font-mono text-emerald-400 flex items-baseline gap-1">
+                <span id="job-remaining" class="text-xl">Calculating...</span>
               </div>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
-              <span class="text-xs text-slate-400 uppercase tracking-wide block mb-1">Slicer Estimate</span>
-              <div id="job-est" class="text-base font-bold font-mono text-amber-400">
+          <div class="grid grid-cols-3 gap-3">
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+              <span class="text-[11px] text-slate-400 uppercase tracking-wide block mb-1">Est. Finish (ETA)</span>
+              <div id="job-eta" class="text-sm font-bold font-mono text-cyan-300">
+                --:--
+              </div>
+            </div>
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+              <span class="text-[11px] text-slate-400 uppercase tracking-wide block mb-1">Total Duration</span>
+              <div id="job-est" class="text-sm font-bold font-mono text-amber-400">
                 1h 36m
               </div>
             </div>
-            <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
-              <span class="text-xs text-slate-400 uppercase tracking-wide block mb-1">Chamber Light</span>
-              <div id="chamber-led-status" class="text-base font-bold font-mono text-emerald-400 flex items-center gap-1.5">
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+              <span class="text-[11px] text-slate-400 uppercase tracking-wide block mb-1">Chamber Light</span>
+              <div id="chamber-led-status" class="text-sm font-bold font-mono text-emerald-400 flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-emerald-400"></span> ON
               </div>
             </div>
@@ -340,6 +349,18 @@
       document.getElementById('badge-mat').textContent = st.material || "PLA";
       if (st.print_duration && st.print_duration !== "Unknown") {
         document.getElementById('job-est').textContent = st.print_duration;
+      }
+      if (st.remaining_time) {
+        document.getElementById('job-remaining').textContent = st.remaining_time;
+        const pill = document.getElementById('progress-rem-pill');
+        if (st.remaining_time !== "Unknown" && st.remaining_time !== "Calculating...") {
+          pill.textContent = `${st.remaining_time} left (ETA ${st.eta || '--:--'})`;
+        } else {
+          pill.textContent = st.remaining_time;
+        }
+      }
+      if (st.eta) {
+        document.getElementById('job-eta').textContent = st.eta;
       }
 
       // Progress & Layers

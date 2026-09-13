@@ -32,6 +32,10 @@ latest_state: Dict[str, Any] = {
     "material": "Unknown",
     "layer_height": "Unknown",
     "print_duration": "Unknown",
+    "total_seconds": 0,
+    "remaining_time": "Unknown",
+    "remaining_seconds": 0,
+    "eta": "Unknown",
     "led_on": False,
     "nozzle_temp": 0.0,
     "nozzle_target": 0.0,
@@ -52,7 +56,7 @@ def parse_filename_meta(filename: str):
     """
     Extracts metadata from filename e.g. Modular_SingleBay_16mm_M3_PLA_1h36m.gcode.3mf
     """
-    meta = {"material": "Unknown", "duration": "Unknown"}
+    meta = {"material": "Unknown", "duration": "Unknown", "total_seconds": 0}
     if not filename or filename == "None":
         return meta
         
@@ -61,9 +65,23 @@ def parse_filename_meta(filename: str):
             meta["material"] = mat
             break
             
-    dur_m = re.search(r"(\d+h\d+m|\d+m\d+s|\d+h|\d+m)", filename)
+    # Look for duration pattern before file extension or trailing delimiter
+    # Matches e.g. _1h36m.gcode, _45m.3mf, 1h30m
+    dur_m = re.search(r"(?:_|-)(\d+h\d+m|\d+h|\d+m\d+s|\d+m)(?:\.gcode|\.3mf|\.gx|$)", filename, re.IGNORECASE)
+    if not dur_m:
+        # Fallback to any duration match
+        dur_m = re.search(r"(\d+h\d+m|\d+h|\d+m\d+s|\d+m)", filename, re.IGNORECASE)
+        
     if dur_m:
-        meta["duration"] = dur_m.group(1)
+        raw_dur = dur_m.group(1).lower()
+        meta["duration"] = raw_dur
+        h_m = re.search(r"(\d+)h", raw_dur)
+        m_m = re.search(r"(\d+)m", raw_dur)
+        s_m = re.search(r"(\d+)s", raw_dur)
+        hours = int(h_m.group(1)) if h_m else 0
+        minutes = int(m_m.group(1)) if m_m else 0
+        seconds = int(s_m.group(1)) if s_m else 0
+        meta["total_seconds"] = hours * 3600 + minutes * 60 + seconds
         
     return meta
 
@@ -111,6 +129,7 @@ def query_printer_sync(ip: str, port: int) -> Dict[str, Any]:
             meta = parse_filename_meta(cur_file)
             latest_state["material"] = meta["material"]
             latest_state["print_duration"] = meta["duration"]
+            latest_state["total_seconds"] = meta["total_seconds"]
             
         # Parse M105 (Temps)
         m105 = raw.get("~M105", "")
@@ -139,6 +158,30 @@ def query_printer_sync(ip: str, port: int) -> Dict[str, Any]:
                 latest_state["progress_pct"] = latest_state["sd_byte_pct"]
         else:
             latest_state["progress_pct"] = latest_state["sd_byte_pct"]
+
+        # Calculate Remaining Time & ETA
+        tot_sec = latest_state.get("total_seconds", 0)
+        pct = latest_state.get("progress_pct", 0)
+        if "BUILDING" in latest_state.get("machine_status", "") and tot_sec > 0 and pct > 0:
+            rem_sec = int(round(tot_sec * (1.0 - (pct / 100.0))))
+            latest_state["remaining_seconds"] = max(0, rem_sec)
+            rem_h = rem_sec // 3600
+            rem_m = (rem_sec % 3600) // 60
+            if rem_h > 0:
+                latest_state["remaining_time"] = f"{rem_h}h {rem_m:02d}m"
+            else:
+                latest_state["remaining_time"] = f"{rem_m}m"
+            
+            # Compute ETA wall clock time (e.g. 20:15)
+            eta_ts = time.time() + rem_sec
+            latest_state["eta"] = time.strftime("%H:%M", time.localtime(eta_ts))
+        elif pct >= 100:
+            latest_state["remaining_time"] = "0m"
+            latest_state["remaining_seconds"] = 0
+            latest_state["eta"] = "Complete"
+        else:
+            latest_state["remaining_time"] = "Calculating..."
+            latest_state["eta"] = "Calculating..."
             
         # Parse M114 (XYZ Coordinates)
         m114 = raw.get("~M114", "")
