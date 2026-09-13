@@ -283,9 +283,24 @@ async def toggle_led():
     current = latest_state.get("led_on", False)
     target_cmd = "~M652" if current else "~M651" # M651 is on, M652 is off in Flashforge
     resp = await asyncio.to_thread(send_gcode_command, target_cmd)
-    # Refresh status immediately
-    await asyncio.to_thread(query_printer_sync, PRINTER_IP, PRINTER_PORT)
-    return {"status": "ok", "response": resp, "led_on": not current}
+    
+    # Wait briefly and refresh status from printer
+    await asyncio.sleep(0.1)
+    state = await asyncio.to_thread(query_printer_sync, PRINTER_IP, PRINTER_PORT)
+    
+    # Broadcast refreshed state immediately to all websockets
+    if connected_websockets:
+        dead_sockets = []
+        for ws in connected_websockets:
+            try:
+                await ws.send_json(state)
+            except Exception:
+                dead_sockets.append(ws)
+        for ws in dead_sockets:
+            if ws in connected_websockets:
+                connected_websockets.remove(ws)
+                
+    return {"status": "ok", "response": resp, "led_on": state.get("led_on", not current)}
 
 @app.post("/api/control/pause")
 async def pause_print():

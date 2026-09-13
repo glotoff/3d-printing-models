@@ -246,8 +246,9 @@
             <span id="coord-z" class="text-sm font-mono font-bold text-slate-200">0.0</span>
           </div>
         </div>
-        <div class="mt-2 text-[11px] text-slate-500 text-center font-mono">
-          Mode: <span id="move-mode" class="text-slate-300 font-bold">MOVING</span>
+        <div class="mt-2 text-[11px] text-slate-400 flex items-center justify-between font-mono px-1">
+          <span>Extruded (A): <b id="filament-a" class="text-indigo-400">0.0</b> mm</span>
+          <span>Mode: <b id="move-mode" class="text-slate-300">MOVING</b></span>
         </div>
       </div>
 
@@ -384,29 +385,56 @@
 
       // Coordinates
       if (st.coords) {
-        document.getElementById('coord-x').textContent = st.coords.x.toFixed(2);
-        document.getElementById('coord-y').textContent = st.coords.y.toFixed(2);
-        document.getElementById('coord-z').textContent = st.coords.z.toFixed(2);
-        document.getElementById('overlay-x').textContent = st.coords.x.toFixed(1);
-        document.getElementById('overlay-y').textContent = st.coords.y.toFixed(1);
-        document.getElementById('overlay-z').textContent = st.coords.z.toFixed(1);
-        document.getElementById('filament-a').textContent = (st.coords.a || 0).toFixed(1);
+        const cx = document.getElementById('coord-x');
+        if (cx) cx.textContent = (st.coords.x || 0).toFixed(2);
+        const cy = document.getElementById('coord-y');
+        if (cy) cy.textContent = (st.coords.y || 0).toFixed(2);
+        const cz = document.getElementById('coord-z');
+        if (cz) cz.textContent = (st.coords.z || 0).toFixed(2);
+        const ox = document.getElementById('overlay-x');
+        if (ox) ox.textContent = (st.coords.x || 0).toFixed(1);
+        const oy = document.getElementById('overlay-y');
+        if (oy) oy.textContent = (st.coords.y || 0).toFixed(1);
+        const oz = document.getElementById('overlay-z');
+        if (oz) oz.textContent = (st.coords.z || 0).toFixed(1);
+        const fa = document.getElementById('filament-a');
+        if (fa) fa.textContent = (st.coords.a || 0).toFixed(1);
       }
 
-      document.getElementById('move-mode').textContent = st.move_mode || "IDLE";
+      const mm = document.getElementById('move-mode');
+      if (mm) mm.textContent = st.move_mode || "IDLE";
       
       // Hardware
-      if (st.firmware && st.firmware !== "Unknown") document.getElementById('hw-fw').textContent = st.firmware;
-      if (st.mac && st.mac !== "Unknown") document.getElementById('hw-mac').textContent = st.mac;
+      if (st.firmware && st.firmware !== "Unknown") {
+        const fw = document.getElementById('hw-fw');
+        if (fw) fw.textContent = st.firmware;
+      }
+      if (st.mac && st.mac !== "Unknown") {
+        const mac = document.getElementById('hw-mac');
+        if (mac) mac.textContent = st.mac;
+      }
 
       // LED
       const ledBadge = document.getElementById('chamber-led-status');
+      const btnLed = document.getElementById('btn-led');
       if (st.led_on) {
-        ledBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400"></span> ON';
-        ledBadge.className = "text-base font-bold font-mono text-emerald-400 flex items-center gap-1.5";
+        if (ledBadge) {
+          ledBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400"></span> ON';
+          ledBadge.className = "text-sm font-bold font-mono text-emerald-400 flex items-center gap-1.5";
+        }
+        if (btnLed) {
+          btnLed.className = "p-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition shadow-sm shadow-amber-500/20";
+          btnLed.title = "Turn Chamber LED OFF";
+        }
       } else {
-        ledBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-500"></span> OFF';
-        ledBadge.className = "text-base font-bold font-mono text-slate-400 flex items-center gap-1.5";
+        if (ledBadge) {
+          ledBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-500"></span> OFF';
+          ledBadge.className = "text-sm font-bold font-mono text-slate-400 flex items-center gap-1.5";
+        }
+        if (btnLed) {
+          btnLed.className = "p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition";
+          btnLed.title = "Turn Chamber LED ON";
+        }
       }
     }
 
