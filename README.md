@@ -125,6 +125,7 @@ A responsive dark-themed dashboard containerized with Docker and deployed to `ko
 - **Live Chamber Camera Feed:** Embedded low-latency MJPEG stream with real-time XYZ toolhead coordinate overlay.
 - **WebSocket Telemetry:** Zero-latency updates for Nozzle & Bed temperatures (actual vs. target), layer progress (`Layer X / Y`), elapsed time, and extruded filament length (A).
 - **Printer Controls:** Remote chamber LED light toggle (`~M651` / `~M652`) and Pause / Resume controls (`~M25` / `~M24`).
+- **Stream Recording & Archive:** Direct server-side recording of the camera feed into compressed H.264 MP4 clips via FFmpeg, with a built-in gallery for downloads and management.
 - **Access:** Available on local network at `http://kopilka:4000/`.
 
 To run locally or deploy:

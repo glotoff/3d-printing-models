@@ -75,12 +75,19 @@
       <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col shadow-xl">
         <div class="flex items-center justify-between pb-3 border-b border-slate-800/80 mb-3">
           <div class="flex items-center space-x-2">
-            <div class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></div>
+            <div id="cam-live-indicator" class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></div>
             <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-300">Live Chamber Camera</h2>
+            <div id="rec-live-badge" class="hidden items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/40 text-[10px] font-mono font-bold uppercase">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
+              REC <span id="rec-timer">00:00</span>
+            </div>
           </div>
           <div class="flex items-center space-x-2">
-            <span class="text-xs text-slate-400 font-mono bg-slate-800/80 px-2.5 py-0.5 rounded border border-slate-700/50">720p 30fps MJPEG</span>
-            <button onclick="refreshCamera()" class="text-xs text-cyan-400 hover:text-cyan-300 px-2 py-0.5 rounded bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-800/50 transition">Reload</button>
+            <button id="btn-record" onclick="toggleRecording()" class="text-xs px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/40">
+              <span class="w-2 h-2 rounded-full bg-red-500"></span>
+              <span id="btn-record-text">Record MP4</span>
+            </button>
+            <button onclick="refreshCamera()" class="text-xs text-cyan-400 hover:text-cyan-300 px-2.5 py-1 rounded-lg bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-800/50 transition">Reload</button>
           </div>
         </div>
         <div class="relative flex-1 bg-black rounded-xl overflow-hidden aspect-video flex items-center justify-center border border-slate-800 group">
@@ -280,6 +287,24 @@
         </div>
       </div>
 
+    <!-- Saved Video Recordings Library Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800/80 mb-4">
+        <div class="flex items-center space-x-2">
+          <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-300">Saved Stream Recordings</h2>
+        </div>
+        <button onclick="fetchRecordings()" class="text-xs text-slate-400 hover:text-slate-200 px-2.5 py-1 rounded bg-slate-800 border border-slate-700 transition flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          Refresh List
+        </button>
+      </div>
+
+      <div id="recordings-container" class="space-y-2">
+        <div class="text-xs text-slate-500 font-mono py-4 text-center">Loading recordings...</div>
+      </div>
     </div>
 
   </main>
@@ -404,6 +429,31 @@
       const mm = document.getElementById('move-mode');
       if (mm) mm.textContent = st.move_mode || "IDLE";
       
+      // Recording State Handler
+      if (st.recording) {
+        const isRec = st.recording.is_recording;
+        const btnRec = document.getElementById('btn-record');
+        const btnText = document.getElementById('btn-record-text');
+        const recBadge = document.getElementById('rec-live-badge');
+        const recTimer = document.getElementById('rec-timer');
+
+        if (isRec) {
+          recBadge.classList.remove('hidden');
+          recBadge.classList.add('flex');
+          const d = st.recording.duration || 0;
+          const m = Math.floor(d / 60).toString().padStart(2, '0');
+          const s = (d % 60).toString().padStart(2, '0');
+          recTimer.textContent = `${m}:${s}`;
+          btnRec.className = "text-xs px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition bg-red-600 hover:bg-red-500 text-white border border-red-500 animate-pulse";
+          btnText.textContent = "Stop Recording";
+        } else {
+          recBadge.classList.add('hidden');
+          recBadge.classList.remove('flex');
+          btnRec.className = "text-xs px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/40";
+          btnText.textContent = "Record MP4";
+        }
+      }
+
       // Hardware
       if (st.firmware && st.firmware !== "Unknown") {
         const fw = document.getElementById('hw-fw');
@@ -438,6 +488,77 @@
       }
     }
 
+    let isRecordingClient = false;
+    async function toggleRecording() {
+      const btnText = document.getElementById('btn-record-text');
+      const shouldStop = btnText.textContent.includes("Stop");
+      const endpoint = shouldStop ? '/api/record/stop' : '/api/record/start';
+      try {
+        const res = await fetch(endpoint, { method: 'POST' });
+        const data = await res.json();
+        console.log("Recording response:", data);
+        setTimeout(fetchRecordings, 1000);
+      } catch (e) {
+        console.error("Recording action failed:", e);
+      }
+    }
+
+    async function fetchRecordings() {
+      const container = document.getElementById('recordings-container');
+      try {
+        const res = await fetch('/api/recordings');
+        const data = await res.json();
+        const list = data.recordings || [];
+        if (list.length === 0) {
+          container.innerHTML = `
+            <div class="text-xs text-slate-500 font-mono py-6 text-center border border-dashed border-slate-800 rounded-xl">
+              No recordings saved yet. Click "Record MP4" above the camera feed to start recording the live print stream.
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = list.map(rec => `
+          <div class="flex items-center justify-between p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 transition">
+            <div class="flex items-center space-x-3">
+              <div class="p-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+              </div>
+              <div>
+                <div class="text-sm font-semibold font-mono text-slate-200">${rec.filename}</div>
+                <div class="text-[11px] text-slate-500 font-mono flex items-center gap-2">
+                  <span>${rec.created_at}</span>
+                  <span>•</span>
+                  <span>${rec.size_mb} MB</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2">
+              <a href="${rec.url}" download="${rec.filename}" class="px-3 py-1.5 rounded-lg bg-cyan-950/50 hover:bg-cyan-900/70 text-cyan-300 border border-cyan-800/60 text-xs font-semibold font-mono transition flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Download MP4
+              </a>
+              <button onclick="deleteRecording('${rec.filename}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-red-950/60 text-slate-400 hover:text-red-300 border border-slate-700 hover:border-red-800/60 transition" title="Delete recording">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = `<div class="text-xs text-red-400 font-mono py-4 text-center">Failed to load recordings: ${e}</div>`;
+      }
+    }
+
+    async function deleteRecording(filename) {
+      if (confirm(`Delete recording "${filename}"?`)) {
+        try {
+          await fetch(`/api/recordings/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+          fetchRecordings();
+        } catch (e) {
+          console.error("Delete failed:", e);
+        }
+      }
+    }
+
     async function toggleLed() {
       try {
         await fetch('/api/control/led', { method: 'POST' });
@@ -462,7 +583,10 @@
     }
 
     // Initialize WebSocket on DOM ready
-    window.addEventListener('DOMContentLoaded', connectWS);
+    window.addEventListener('DOMContentLoaded', () => {
+      connectWS();
+      fetchRecordings();
+    });
   </script>
 </body>
 </html>

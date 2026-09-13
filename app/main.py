@@ -6,8 +6,8 @@ import time
 from typing import Dict, Any, List
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi.responses import HTMLResponse, StreamingResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 import httpx
@@ -16,6 +16,17 @@ PRINTER_IP = os.getenv("PRINTER_IP", "192.168.50.99")
 PRINTER_PORT = int(os.getenv("PRINTER_PORT", "8899"))
 CAMERA_URL = os.getenv("CAMERA_URL", f"http://{PRINTER_IP}:8080/?action=stream")
 POLL_INTERVAL = float(os.getenv("POLL_INTERVAL", "1.5"))
+RECORDINGS_DIR = os.getenv("RECORDINGS_DIR", "recordings" if os.path.exists("recordings") else "/app/recordings")
+os.makedirs(RECORDINGS_DIR, exist_ok=True)
+
+# Recording process handle
+recording_proc: Any = None
+recording_info: Dict[str, Any] = {
+    "is_recording": False,
+    "filename": None,
+    "start_time": 0,
+    "duration": 0
+}
 
 # Global cached state
 latest_state: Dict[str, Any] = {
@@ -46,6 +57,7 @@ latest_state: Dict[str, Any] = {
     "progress_pct": 0,
     "sd_byte_pct": 0,
     "coords": {"x": 0.0, "y": 0.0, "z": 0.0, "a": 0.0, "b": 0.0},
+    "recording": {"is_recording": False, "filename": None, "duration": 0},
     "last_update": 0,
     "error": None
 }
@@ -235,6 +247,20 @@ async def printer_poll_loop():
     while True:
         try:
             state = await asyncio.to_thread(query_printer_sync, PRINTER_IP, PRINTER_PORT)
+            if recording_info["is_recording"]:
+                rec_dur = int(round(time.time() - recording_info["start_time"]))
+                recording_info["duration"] = rec_dur
+                state["recording"] = {
+                    "is_recording": True,
+                    "filename": recording_info["filename"],
+                    "duration": rec_dur
+                }
+            else:
+                state["recording"] = {
+                    "is_recording": False,
+                    "filename": None,
+                    "duration": 0
+                }
             # Broadcast to connected websockets
             if connected_websockets:
                 dead_sockets = []
@@ -307,10 +333,122 @@ async def pause_print():
     resp = await asyncio.to_thread(send_gcode_command, "~M25")
     return {"status": "ok", "response": resp}
 
-@app.post("/api/control/resume")
-async def resume_print():
-    resp = await asyncio.to_thread(send_gcode_command, "~M24")
-    return {"status": "ok", "response": resp}
+@app.post("/api/record/start")
+async def start_recording():
+    global recording_proc, recording_info
+    if recording_info["is_recording"]:
+        return {"status": "already_recording", "filename": recording_info["filename"]}
+    
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    cur_file = latest_state.get("current_file", "stream")
+    clean_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', cur_file.replace('.gcode.3mf', '').replace('.3mf', '').replace('.gcode', ''))[:30]
+    filename = f"{clean_name}_{timestamp}.mp4"
+    filepath = os.path.join(RECORDINGS_DIR, filename)
+
+    # Launch ffmpeg process
+    # Stream from camera url, convert MJPEG frames to H.264 MP4
+    cmd = [
+        "ffmpeg", "-y",
+        "-f", "mjpeg",
+        "-i", CAMERA_URL,
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-preset", "veryfast",
+        "-crf", "26",
+        "-movflags", "+faststart",
+        filepath
+    ]
+
+    try:
+        recording_proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL
+        )
+        recording_info["is_recording"] = True
+        recording_info["filename"] = filename
+        recording_info["filepath"] = filepath
+        recording_info["start_time"] = time.time()
+        recording_info["duration"] = 0
+        latest_state["recording"] = {
+            "is_recording": True,
+            "filename": filename,
+            "duration": 0
+        }
+        return {"status": "recording_started", "filename": filename}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/record/stop")
+async def stop_recording():
+    global recording_proc, recording_info
+    if not recording_info["is_recording"]:
+        return {"status": "not_recording"}
+
+    saved_file = recording_info["filename"]
+    try:
+        if recording_proc:
+            recording_proc.terminate()
+            try:
+                await asyncio.wait_for(recording_proc.wait(), timeout=5.0)
+            except asyncio.TimeoutError:
+                recording_proc.kill()
+    except Exception as e:
+        print("Error stopping ffmpeg:", e)
+    finally:
+        recording_proc = None
+        recording_info["is_recording"] = False
+        recording_info["filename"] = None
+        recording_info["start_time"] = 0
+        recording_info["duration"] = 0
+        latest_state["recording"] = {
+            "is_recording": False,
+            "filename": None,
+            "duration": 0
+        }
+
+    return {"status": "recording_stopped", "saved_filename": saved_file}
+
+@app.get("/api/recordings")
+async def list_recordings():
+    recordings = []
+    if os.path.exists(RECORDINGS_DIR):
+        for f in sorted(os.listdir(RECORDINGS_DIR), reverse=True):
+            if f.endswith((".mp4", ".mkv", ".webm")):
+                fpath = os.path.join(RECORDINGS_DIR, f)
+                try:
+                    stat = os.stat(fpath)
+                    recordings.append({
+                        "filename": f,
+                        "size_bytes": stat.st_size,
+                        "size_mb": round(stat.st_size / (1024 * 1024), 2),
+                        "created_at": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(stat.st_mtime)),
+                        "url": f"/api/recordings/{f}"
+                    })
+                except Exception:
+                    pass
+    return {"recordings": recordings}
+
+@app.get("/api/recordings/{filename}")
+async def get_recording_file(filename: str):
+    # Sanitize filename against path traversal
+    safe_name = os.path.basename(filename)
+    fpath = os.path.join(RECORDINGS_DIR, safe_name)
+    if not os.path.exists(fpath):
+        raise HTTPException(status_code=404, detail="Recording file not found")
+    return FileResponse(fpath, media_type="video/mp4", filename=safe_name)
+
+@app.delete("/api/recordings/{filename}")
+async def delete_recording_file(filename: str):
+    safe_name = os.path.basename(filename)
+    fpath = os.path.join(RECORDINGS_DIR, safe_name)
+    if os.path.exists(fpath):
+        try:
+            os.remove(fpath)
+            return {"status": "deleted", "filename": safe_name}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+    raise HTTPException(status_code=404, detail="Recording file not found")
 
 @app.get("/api/camera/stream")
 async def camera_stream():
