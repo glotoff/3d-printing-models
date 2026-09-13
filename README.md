@@ -107,10 +107,45 @@ Binary 3D models (`.stl`, `.3mf`, `.f3d`) cannot be diffed cleanly in Git. This 
 
 ---
 
+---
+
+## Print Monitoring & Web Dashboard
+
+This repository includes real-time telemetry tools to monitor Flashforge Adventurer 5M series printers via TCP socket (port 8899) and live MJPEG chamber camera stream (port 8080).
+
+### 1. CLI Monitor (`print_status.py`)
+Quick command-line tool for checking temperatures, layer count, file, and progress:
+```bash
+python print_status.py          # One-time status snapshot
+python print_status.py --watch  # Auto-refreshing terminal HUD (every 5s)
+```
+
+### 2. Real-Time Web Dashboard (`app/`)
+A responsive dark-themed dashboard containerized with Docker and deployed to `kopilka:4000`:
+- **Live Chamber Camera Feed:** Embedded low-latency MJPEG stream with real-time XYZ toolhead coordinate overlay.
+- **WebSocket Telemetry:** Zero-latency updates for Nozzle & Bed temperatures (actual vs. target), layer progress (`Layer X / Y`), elapsed time, and extruded filament length (A).
+- **Printer Controls:** Remote chamber LED light toggle (`~M651` / `~M652`) and Pause / Resume controls (`~M25` / `~M24`).
+- **Access:** Available on local network at `http://kopilka:4000/`.
+
+To run locally or deploy:
+```bash
+cd app
+docker compose up -d --build
+```
+
+---
+
 ## Repository Structure
 
 ```
 .
+├── app/                                  # Real-time web telemetry dashboard
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── main.py                           # FastAPI + WebSocket backend & camera proxy
+│   ├── requirements.txt
+│   └── templates/
+│       └── index.html                    # Dark-mode dashboard with Tailwind CSS
 ├── cad/
 │   ├── modular_single_bay_70mm.scad      # Parametric OpenSCAD source with 4 guide pins
 │   ├── generate_fusion360_model.py       # Parametric Fusion 360 API generator
@@ -122,6 +157,7 @@ Binary 3D models (`.stl`, `.3mf`, `.f3d`) cannot be diffed cleanly in Git. This 
 ├── images/                               # 3D viewport renders and slicer plate preview
 ├── legacy/                               # Previous prototype iterations and test models
 ├── Modular_SingleBay_16mm_M3.3mf         # OrcaSlicer active project file
+├── print_status.py                       # CLI printer telemetry script
 ├── .gitignore
 └── README.md
 ```

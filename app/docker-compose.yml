@@ -1,0 +1,12 @@
+services:
+  flashforge-monitor:
+    build: .
+    container_name: flashforge-monitor
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      - PRINTER_IP=192.168.50.99
+      - PRINTER_PORT=8899
+      - CAMERA_URL=http://192.168.50.99:8080/?action=stream
+      - POLL_INTERVAL=1.5
