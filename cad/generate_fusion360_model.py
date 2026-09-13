@@ -239,34 +239,58 @@ def run(_context: str):
     ext_nw.startExtent = adsk.fusion.OffsetStartDefinition.create(adsk.core.ValueInput.createByReal(y_in_right))
     ext_feats.add(ext_nw)
 
-    # 7. ADD 4 CYLINDER GUIDE PINS INSIDE THE HOLDER
-    # Requirement: "add some king of cylinder 'pins' inside the holder to restrict the movement of the drive. There will be 4 such pins in total."
-    # 4 vertical cylindrical pins in the 4 corners of the drive slot:
+    # 7. ADD 4 SPLIT CYLINDER GUIDE PINS INSIDE THE HOLDER (7mm Bottom + 7mm Top)
+    # User requirement:
+    # "4 цилиндрических направляющих пина don't need to go from top to bottom.
+    # to save the time and plastic, you can make it like 7mm at the bottom and 7mm at the top and it should be enough."
+    # 4 cylindrical pins in the 4 corners of the drive slot:
     # Radius = 0.30 cm (6.0 mm dia).
     # Left pins center: Y = 0.60 cm -> inner tangent at Y = 0.90 cm
     # Right pins center: Y = 2.68 cm -> inner tangent at Y = 2.38 cm
     # Distance between pin inner tangents = 2.38 - 0.90 = 1.48 cm (14.8 mm - exact snug fit for 14.0 mm drive!)
     # Air gap between drive and each side honeycomb wall = 5.0 mm!
     # Front pins at X = 0.80 cm, Rear pins at X = slot_l - 0.80 = 7.10 cm
-    # Sketched on plane_floor (Z = base_t) and extruded up to caddy_h!
-    sk_pins = sketches.add(plane_floor)
+    
     pin_r = 0.30 # 3.0 mm radius = 6.0 mm dia cylinder
+    pin_h = 0.70 # 7.0 mm height
     x_pins = [0.80, slot_l - 0.80]
     y_pins = [0.60, 2.68]
     
+    # A. Bottom 4 Pins: from floor Z = base_t (0.35 cm) extending up by 7.0 mm (0.70 cm) to Z = 1.05 cm
+    sk_pins_bot = sketches.add(plane_floor)
     for xp in x_pins:
         for yp in y_pins:
-            pt = sk_pins.modelToSketchSpace(adsk.core.Point3D.create(xp, yp, base_t))
-            sk_pins.sketchCurves.sketchCircles.addByCenterRadius(pt, pin_r)
+            pt = sk_pins_bot.modelToSketchSpace(adsk.core.Point3D.create(xp, yp, base_t))
+            sk_pins_bot.sketchCurves.sketchCircles.addByCenterRadius(pt, pin_r)
             
-    pin_profs = adsk.core.ObjectCollection.create()
-    for p in sk_pins.profiles:
-        pin_profs.add(p)
+    pin_bot_profs = adsk.core.ObjectCollection.create()
+    for p in sk_pins_bot.profiles:
+        pin_bot_profs.add(p)
         
-    ext_pins = ext_feats.createInput(pin_profs, adsk.fusion.FeatureOperations.JoinFeatureOperation)
-    ext_pins.participantBodies = [mod_body]
-    ext_pins.setDistanceExtent(False, adsk.core.ValueInput.createByReal(caddy_h - base_t))
-    ext_feats.add(ext_pins)
+    ext_pins_bot = ext_feats.createInput(pin_bot_profs, adsk.fusion.FeatureOperations.JoinFeatureOperation)
+    ext_pins_bot.participantBodies = [mod_body]
+    ext_pins_bot.setDistanceExtent(False, adsk.core.ValueInput.createByReal(pin_h))
+    ext_feats.add(ext_pins_bot)
+
+    # B. Top 4 Pins: from Z = caddy_h - pin_h (6.30 cm) extending up by 7.0 mm (0.70 cm) to Z = 7.00 cm
+    plane_top_pins_in = planes.createInput()
+    plane_top_pins_in.setByOffset(root.xYConstructionPlane, adsk.core.ValueInput.createByReal(caddy_h - pin_h))
+    plane_top_pins = planes.add(plane_top_pins_in)
+
+    sk_pins_top = sketches.add(plane_top_pins)
+    for xp in x_pins:
+        for yp in y_pins:
+            pt = sk_pins_top.modelToSketchSpace(adsk.core.Point3D.create(xp, yp, caddy_h - pin_h))
+            sk_pins_top.sketchCurves.sketchCircles.addByCenterRadius(pt, pin_r)
+
+    pin_top_profs = adsk.core.ObjectCollection.create()
+    for p in sk_pins_top.profiles:
+        pin_top_profs.add(p)
+
+    ext_pins_top = ext_feats.createInput(pin_top_profs, adsk.fusion.FeatureOperations.JoinFeatureOperation)
+    ext_pins_top.participantBodies = [mod_body]
+    ext_pins_top.setDistanceExtent(False, adsk.core.ValueInput.createByReal(pin_h))
+    ext_feats.add(ext_pins_top)
 
     # 8. Add 1 Hard Drive (78.0 mm wide x 14.0 mm thick x 125 mm tall) for verification
     y_drive_center = 0.90 + 0.04 # centered between pins with 0.4mm clearance on each side
@@ -293,7 +317,7 @@ def run(_context: str):
     stl_opts = export_mgr.createSTLExportOptions(mod_body, stl_path)
     stl_opts.meshRefinement = adsk.fusion.MeshRefinementSettings.MeshRefinementHigh
     export_mgr.execute(stl_opts)
-    print("Exported updated STL with 4 pins to:", stl_path)
+    print("Exported updated STL with split pins (7mm top/bottom) to:", stl_path)
 
     # Save document in Default Project
     dp = None
@@ -303,7 +327,7 @@ def run(_context: str):
             break
     if dp:
         try:
-            doc.saveAs("13_Modular_SingleBay_Vent10mm_4Pins", dp.rootFolder, "+10mm ventilation with 4 cylinder guide pins", "")
-            print("Saved document as 13_Modular_SingleBay_Vent10mm_4Pins")
+            doc.saveAs("14_Modular_SingleBay_Vent10mm_SplitPins", dp.rootFolder, "+10mm ventilation with split 7mm bottom and 7mm top guide pins", "")
+            print("Saved document as 14_Modular_SingleBay_Vent10mm_SplitPins")
         except Exception as e:
             print("Save notice:", e)

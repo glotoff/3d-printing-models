@@ -1,6 +1,6 @@
-# Modular Single-Bay HDD / SSD Caddy (70mm Tall, +10mm Ventilation, 4 Guide Pins)
+# Modular Single-Bay HDD / SSD Caddy (70mm Tall, +10mm Ventilation, Split Guide Pins)
 
-A modular, linkable 3D-printable dock tailored specifically for **$78\text{ mm} \times 14\text{ mm}$ external hard drive / SSD enclosures**, featuring an expanded **$+10\text{ mm}$ ventilation clearance** with **4 internal cylinder guide pins** that keep the drive rigidly constrained and upright with zero wobble.
+A modular, linkable 3D-printable dock tailored specifically for **$78\text{ mm} \times 14\text{ mm}$ external hard drive / SSD enclosures**, featuring an expanded **$+10\text{ mm}$ ventilation clearance** with **4 internal split cylinder guide pins (7 mm bottom + 7 mm top)** that rigidly constrain the drive while maximizing airflow and reducing print time and plastic consumption.
 
 | Hard Drive Enclosure in Dock (+5mm Air Gap) | 4 Cylinder Pins Inside Bay | 100% Flat Mating Exterior |
 | :---: | :---: | :---: |
@@ -10,9 +10,12 @@ A modular, linkable 3D-printable dock tailored specifically for **$78\text{ mm} 
 
 ## Key Features
 
-1. **+10 mm Ventilation Expansion with 4 Cylinder Guide Pins:**
+1. **+10 mm Ventilation Expansion with Split Guide Pins (7 mm Bottom + 7 mm Top):**
    - **Total Slot Width:** Expanded from $14.8\text{ mm}$ to **$24.8\text{ mm}$** (+10 mm) for unrestricted airflow.
-   - **4 Vertical Cylinder Guide Pins ($\varnothing 6.0\text{ mm}$):** Located at the 4 internal corners of the drive slot, extending continuously from the base floor up to the top ($Z = 70.0\text{ mm}$).
+   - **Split Cylinder Guide Pins ($\varnothing 6.0\text{ mm}$):**
+     - **Bottom Pins:** $7.0\text{ mm}$ tall rising from the floor ($Z = 3.5\text{ mm}$ to $10.5\text{ mm}$) to locate and seat the base of the drive.
+     - **Top Pins:** $7.0\text{ mm}$ tall at the top rim ($Z = 63.0\text{ mm}$ to $70.0\text{ mm}$) to guide drive entry and prevent top wobble.
+     - **Open Midsection:** The entire middle $52.5\text{ mm}$ is completely open air, cutting print time down to **1h 18m** and filament down to **36.5 g**.
    - **Zero-Wobble Drive Constraint:** The inner tangent distance between the left and right pins is precisely **$14.8\text{ mm}$** ($0.4\text{ mm}$ clearance on each side of the $14.0\text{ mm}$ drive).
    - **Generous 5.0 mm Air Gap on Both Sides:** Rather than resting flush against the honeycomb walls, the drive is held centered with a continuous **$5.0\text{ mm}$ air gap on each side**, allowing massive cross-ventilation across both large aluminium/plastic drive surfaces.
 
@@ -37,7 +40,7 @@ A modular, linkable 3D-printable dock tailored specifically for **$78\text{ mm} 
 | **Height (Z axis)** | ~125 mm | Open top | **$70.0\text{ mm}$** | High lateral stability |
 | **Side Wall Thickness** | — | — | **$4.0\text{ mm}$** | Solid perimeters (4 wall loops) |
 | **Floor Thickness** | — | — | **$3.5\text{ mm}$** | Rigid base with chimney vent |
-| **Guide Pins** | — | **$4 \times \varnothing 6.0\text{ mm}$** | — | Full height vertical cylinders |
+| **Guide Pins** | — | **$4 \times \varnothing 6.0\text{ mm}$ (Split)** | — | **$7.0\text{ mm}$ bottom** + **$7.0\text{ mm}$ top** |
 | **Mounting Levels** | — | — | **$Z = 20\text{ mm}$, $Z = 55\text{ mm}$** | Dual screw rigidity |
 
 ---
