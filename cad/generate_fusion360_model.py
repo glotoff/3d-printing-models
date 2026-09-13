@@ -47,25 +47,27 @@ def run(_context: str):
     design.designType = adsk.fusion.DesignTypes.DirectDesignType
     root = design.rootComponent
 
-    # --- EXACT USER DIMENSIONS ---
-    # User's hard drive: width = 78 mm, depth (thickness) = 14 mm
-    # Internal slot length (along drive width): 79.0 mm (7.90 cm) for smooth slide-in
-    # Internal slot width (along drive thickness): 14.8 mm (1.48 cm) for snug upright fit
-    drive_w = 7.80   # 78.0 mm drive width
-    drive_t = 1.40   # 14.0 mm drive thickness
-    drive_h = 12.50  # 125.0 mm upright height
+    # --- PARAMETERS (cm) ---
+    # Hard Drive: 78.0 mm wide x 14.0 mm deep/thick x 125.0 mm tall
+    drive_w = 7.80   # 78.0 mm
+    drive_t = 1.40   # 14.0 mm
+    drive_h = 12.50  # 125.0 mm
     
-    slot_l = 7.90    # 79.0 mm internal slot length (0.5mm clearance on each end)
-    slot_t = 1.48    # 14.8 mm internal slot width (0.4mm clearance on each side, snug!)
-    wall_t = 0.40    # 4.0 mm side walls maintained
+    # +10 mm Ventilation Expansion:
+    # Slot width increased from 14.8 mm to 24.8 mm (2.48 cm)
+    # Clearance between 4 guide pins remains exactly 14.8 mm (snug fit for 14.0 mm drive)
+    # Air gap between drive and each honeycomb wall is 5.0 mm (0.50 cm)!
+    slot_l = 7.90    # 79.0 mm internal slot length (0.5mm clearance each end)
+    slot_t = 2.48    # 24.8 mm internal slot width (+10mm for massive airflow)
+    wall_t = 0.40    # 4.0 mm side walls
     base_t = 0.35    # 3.5 mm floor
-    caddy_h = 7.00   # 70.0 mm height ( соты go all the way up )
-    front_lip = 0.50 # 5.0 mm solid front pillar
-    rear_lip = 0.50  # 5.0 mm solid rear pillar
-    lip_t = 0.20     # 2.0 mm retaining lip for front/rear window
+    caddy_h = 7.00   # 70.0 mm height
+    front_lip = 0.50 # 5.0 mm front pillar
+    rear_lip = 0.50  # 5.0 mm rear pillar
+    lip_t = 0.20     # 2.0 mm window retaining lip
     
-    mod_w = slot_t + 2 * wall_t # 1.48 + 0.80 = 2.28 cm (22.8 mm)
-    mod_l = slot_l + front_lip + rear_lip # 7.9 + 1.0 = 8.90 cm (89.0 mm)
+    mod_w = slot_t + 2 * wall_t # 2.48 + 0.80 = 3.28 cm (32.8 mm outer width)
+    mod_l = slot_l + front_lip + rear_lip # 7.9 + 1.0 = 8.90 cm (89.0 mm outer length)
     
     ext_feats = root.features.extrudeFeatures
     sketches = root.sketches
@@ -86,7 +88,7 @@ def run(_context: str):
     ext_in = ext_feats.createInput(sk_main.profiles.item(0), adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
     ext_in.setDistanceExtent(False, adsk.core.ValueInput.createByReal(caddy_h))
     mod_body = ext_feats.add(ext_in).bodies.item(0)
-    mod_body.name = "Modular_Bay_78x14mm"
+    mod_body.name = "Modular_Bay_70mm_Vent10mm"
     
     # 2. Drive Slot (from Z = base_t to caddy_h)
     plane_floor_in = planes.createInput()
@@ -148,7 +150,7 @@ def run(_context: str):
 
     # 5. Front & Rear Vertical Windows
     y_in_left = wall_t + lip_t   # 0.60 cm (6.0 mm)
-    y_in_right = wall_t + slot_t - lip_t # 1.68 cm (16.8 mm)
+    y_in_right = wall_t + slot_t - lip_t # 2.68 cm (26.8 mm)
     z_bot = base_t + 0.4
     z_top = caddy_h - 0.5
     
@@ -188,7 +190,6 @@ def run(_context: str):
     
     # B. Screw Head + Washer Counterbore on INSIDE face of LEFT pillar (y_in_left = 0.60 cm):
     # Dia 7.5 mm, depth 2.5 mm in -Y direction.
-    # Solid outer wall remaining: 3.5 mm (from Y = 0.35 to Y = 0). Outer face Y = 0 is 100% FLAT.
     sk_cb_in = sketches.add(root.xZConstructionPlane)
     for zs in z_screws:
         cb1 = sk_cb_in.modelToSketchSpace(adsk.core.Point3D.create(-front_lip / 2.0, 0, zs))
@@ -206,9 +207,8 @@ def run(_context: str):
     ext_cb_left.startExtent = adsk.fusion.OffsetStartDefinition.create(adsk.core.ValueInput.createByReal(y_in_left))
     ext_feats.add(ext_cb_left)
 
-    # C. Captive Hex Nut Pocket on INSIDE face of RIGHT pillar (y_in_right = 1.68 cm):
+    # C. Captive Hex Nut Pocket on INSIDE face of RIGHT pillar (y_in_right = 2.68 cm):
     # Flat-to-flat 5.6 mm, depth 2.6 mm in +Y direction.
-    # Solid outer wall remaining: 3.4 mm (from Y = 1.94 to Y = 2.28). Outer face Y = 2.28 is 100% FLAT.
     sk_nut = sketches.add(root.xZConstructionPlane)
     for zs in z_screws:
         add_hex_nut_pocket_xz(sk_nut, -front_lip / 2.0, zs, 0.56)
@@ -239,9 +239,38 @@ def run(_context: str):
     ext_nw.startExtent = adsk.fusion.OffsetStartDefinition.create(adsk.core.ValueInput.createByReal(y_in_right))
     ext_feats.add(ext_nw)
 
-    # 7. Add 1 Hard Drive (78.0 mm wide x 14.0 mm thick x 125 mm tall) for verification
-    y_drive_center = wall_t + (slot_t - drive_t) / 2.0
-    x_drive_center = (slot_l - drive_w) / 2.0
+    # 7. ADD 4 CYLINDER GUIDE PINS INSIDE THE HOLDER
+    # Requirement: "add some king of cylinder 'pins' inside the holder to restrict the movement of the drive. There will be 4 such pins in total."
+    # 4 vertical cylindrical pins in the 4 corners of the drive slot:
+    # Radius = 0.30 cm (6.0 mm dia).
+    # Left pins center: Y = 0.60 cm -> inner tangent at Y = 0.90 cm
+    # Right pins center: Y = 2.68 cm -> inner tangent at Y = 2.38 cm
+    # Distance between pin inner tangents = 2.38 - 0.90 = 1.48 cm (14.8 mm - exact snug fit for 14.0 mm drive!)
+    # Air gap between drive and each side honeycomb wall = 5.0 mm!
+    # Front pins at X = 0.80 cm, Rear pins at X = slot_l - 0.80 = 7.10 cm
+    # Sketched on plane_floor (Z = base_t) and extruded up to caddy_h!
+    sk_pins = sketches.add(plane_floor)
+    pin_r = 0.30 # 3.0 mm radius = 6.0 mm dia cylinder
+    x_pins = [0.80, slot_l - 0.80]
+    y_pins = [0.60, 2.68]
+    
+    for xp in x_pins:
+        for yp in y_pins:
+            pt = sk_pins.modelToSketchSpace(adsk.core.Point3D.create(xp, yp, base_t))
+            sk_pins.sketchCurves.sketchCircles.addByCenterRadius(pt, pin_r)
+            
+    pin_profs = adsk.core.ObjectCollection.create()
+    for p in sk_pins.profiles:
+        pin_profs.add(p)
+        
+    ext_pins = ext_feats.createInput(pin_profs, adsk.fusion.FeatureOperations.JoinFeatureOperation)
+    ext_pins.participantBodies = [mod_body]
+    ext_pins.setDistanceExtent(False, adsk.core.ValueInput.createByReal(caddy_h - base_t))
+    ext_feats.add(ext_pins)
+
+    # 8. Add 1 Hard Drive (78.0 mm wide x 14.0 mm thick x 125 mm tall) for verification
+    y_drive_center = 0.90 + 0.04 # centered between pins with 0.4mm clearance on each side
+    x_drive_center = (slot_l - drive_w) / 2.0 # centered along X with 0.5mm clearance on each end
     sk_drv = sketches.add(plane_floor)
     sdl = sk_drv.sketchCurves.sketchLines
     da = sk_drv.modelToSketchSpace(adsk.core.Point3D.create(x_drive_center, y_drive_center, base_t))
@@ -264,7 +293,7 @@ def run(_context: str):
     stl_opts = export_mgr.createSTLExportOptions(mod_body, stl_path)
     stl_opts.meshRefinement = adsk.fusion.MeshRefinementSettings.MeshRefinementHigh
     export_mgr.execute(stl_opts)
-    print("Exported updated STL to:", stl_path)
+    print("Exported updated STL with 4 pins to:", stl_path)
 
     # Save document in Default Project
     dp = None
@@ -274,7 +303,7 @@ def run(_context: str):
             break
     if dp:
         try:
-            doc.saveAs("12_Modular_SingleBay_78x14mm", dp.rootFolder, "Slot 79x14.8mm for 78x14mm drive", "")
-            print("Saved document as 12_Modular_SingleBay_78x14mm")
+            doc.saveAs("13_Modular_SingleBay_Vent10mm_4Pins", dp.rootFolder, "+10mm ventilation with 4 cylinder guide pins", "")
+            print("Saved document as 13_Modular_SingleBay_Vent10mm_4Pins")
         except Exception as e:
             print("Save notice:", e)

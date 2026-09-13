@@ -1,5 +1,5 @@
 // ==============================================================================
-// Modular Single-Bay HDD / SSD Caddy (70mm Tall, Exact 78x14mm Drive Fit)
+// Modular Single-Bay HDD / SSD Caddy (70mm Tall, +10mm Vent, 4 Guide Pins)
 // Parametric OpenSCAD Model for Git Version Control and Change Tracking
 // ==============================================================================
 
@@ -12,9 +12,9 @@ drive_w         = 78.0;  // Drive width (X axis)
 drive_t         = 14.0;  // Drive depth / thickness (Y axis)
 drive_h         = 125.0; // Drive upright height (Z axis)
 
-// Internal Slot Dimensions
+// Internal Slot Dimensions (+10 mm ventilation expansion)
 slot_l          = 79.0;  // Internal slot length (X axis) - 0.5mm clearance each end
-slot_t          = 14.8;  // Internal slot width (Y axis) - 0.4mm clearance each side (snug upright fit)
+slot_t          = 24.8;  // Internal slot width (Y axis) - expanded for +10mm airflow
 caddy_h         = 70.0;  // Total height (Z axis)
 wall_t          = 4.0;   // Solid side wall thickness (Y axis)
 base_t          = 3.5;   // Bottom floor thickness (Z axis)
@@ -27,9 +27,17 @@ window_z_bot    = 7.5;   // Window bottom Z coordinate
 window_z_top    = 65.0;  // Window top Z coordinate
 
 // Derived Module Dimensions
-mod_w           = slot_t + 2 * wall_t;           // 22.8 mm total width
+mod_w           = slot_t + 2 * wall_t;           // 32.8 mm total width (+10mm)
 mod_l           = slot_l + front_lip + rear_lip; // 89.0 mm total length
-window_w        = slot_t - 2 * lip_t;            // 10.8 mm window opening width
+window_w        = slot_t - 2 * lip_t;            // 20.8 mm window opening width
+
+// 4 Guide Pin Parameters (Constrains 14.0mm drive with 5.0mm air gap on each side)
+pin_r           = 3.0;   // 6.0 mm diameter cylinder pins
+y_pin_left      = wall_t + lip_t;                // 6.0 mm (tangent at 9.0 mm)
+y_pin_right     = wall_t + slot_t - lip_t;       // 26.8 mm (tangent at 23.8 mm)
+// Clearance between pin tangents: 23.8 - 9.0 = 14.8 mm (0.4mm clearance per side)
+x_pin_front     = front_lip + 8.0;               // 13.0 mm
+x_pin_rear      = front_lip + slot_l - 8.0;      // 76.0 mm
 
 // M3 Joining Hardware Parameters
 z_screws        = [20.0, 55.0]; // Dual mounting hole heights
@@ -60,12 +68,22 @@ module hex_nut_pocket(f2f, depth) {
 
 module caddy_body() {
     difference() {
-        // 1. Solid Outer Block
-        cube([mod_l, mod_w, caddy_h]);
+        // 1. Solid Outer Block + 4 Guide Pins
+        union() {
+            cube([mod_l, mod_w, caddy_h]);
+            
+            // 4 Vertical Cylinder Pins (extending from floor to top)
+            for (xp = [x_pin_front, x_pin_rear]) {
+                for (yp = [y_pin_left, y_pin_right]) {
+                    translate([xp, yp, base_t])
+                        cylinder(r = pin_r, h = caddy_h - base_t);
+                }
+            }
+        }
 
         // 2. Drive Slot Pocket
         translate([front_lip, wall_t, base_t])
-            cube([slot_l + 0.1, slot_t, caddy_h]);
+            cube([slot_l + 0.1, slot_t, caddy_h + 1]);
 
         // 3. Bottom Chimney Vent (through floor)
         translate([front_lip + 8.0, wall_t + lip_t, -1])
@@ -112,9 +130,9 @@ module caddy_body() {
                     cylinder(d = m3_washer_dia, h = m3_washer_depth + 0.1);
 
                 // C. Inside Hex Nut Pocket (Right Pillar)
-                // Inside face of right pillar is at Y = wall_t + slot_t - lip_t (16.8 mm)
-                // Cuts outward (towards +Y) by 2.6 mm (up to Y = 19.4 mm).
-                // Outer face at Y = 22.8 mm remains 100% FLAT with 3.4 mm solid wall!
+                // Inside face of right pillar is at Y = wall_t + slot_t - lip_t (26.8 mm)
+                // Cuts outward (towards +Y) by 2.6 mm (up to Y = 29.4 mm).
+                // Outer face at Y = 32.8 mm remains 100% FLAT with 3.4 mm solid wall!
                 translate([xs, wall_t + slot_t - lip_t - 0.05, zs])
                     rotate([-90, 0, 0])
                     hex_nut_pocket(m3_nut_f2f, m3_nut_depth + 0.1);

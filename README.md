@@ -1,45 +1,44 @@
-# Modular Single-Bay HDD / SSD Caddy (70mm Tall, Snug 78x14mm Fit)
+# Modular Single-Bay HDD / SSD Caddy (70mm Tall, +10mm Ventilation, 4 Guide Pins)
 
-A modular, linkable 3D-printable stand/dock tailored specifically for **$78\text{ mm} \times 14\text{ mm}$ external hard drive / SSD enclosures**. Each bay is printed individually and can be ganged together side-by-side using standard M3 hardware into a rigid array of 2, 3, 5, or more bays.
+A modular, linkable 3D-printable dock tailored specifically for **$78\text{ mm} \times 14\text{ mm}$ external hard drive / SSD enclosures**, featuring an expanded **$+10\text{ mm}$ ventilation clearance** with **4 internal cylinder guide pins** that keep the drive rigidly constrained and upright with zero wobble.
 
-| Hard Drive Enclosure In Dock | Inside Washer & Nut Recesses | 100% Flat Mating Exterior |
+| Hard Drive Enclosure in Dock (+5mm Air Gap) | 4 Cylinder Pins Inside Bay | 100% Flat Mating Exterior |
 | :---: | :---: | :---: |
-| ![Caddy with Drive](images/caddy_with_drive.png) | ![Inside Washer & Nut Recesses](images/caddy_inside_recesses.png) | ![Outside Flat Face](images/caddy_outside_flat.png) |
+| ![Caddy with Drive](images/caddy_with_drive.png) | ![4 Cylinder Pins Inside](images/caddy_inside_recesses.png) | ![Outside Flat Face](images/caddy_outside_flat.png) |
 
 ---
 
 ## Key Features
 
-1. **Precision Fit for $78\text{ mm} \times 14\text{ mm}$ Drives:**
-   - **Internal Slot Length:** $79.0\text{ mm}$ ($+1.0\text{ mm}$ total clearance / $0.5\text{ mm}$ each end) — the $78\text{ mm}$ wide drive slides in smoothly without binding or catching.
-   - **Internal Slot Width / Thickness:** $14.8\text{ mm}$ ($+0.8\text{ mm}$ total clearance / $0.4\text{ mm}$ each side) — holds the $14\text{ mm}$ thick drive upright with zero wobble or rattling.
-   - **Support Height:** $70.0\text{ mm}$ tall caddy structure provides high lateral support, preventing tall drives (~125 mm) from tipping.
+1. **+10 mm Ventilation Expansion with 4 Cylinder Guide Pins:**
+   - **Total Slot Width:** Expanded from $14.8\text{ mm}$ to **$24.8\text{ mm}$** (+10 mm) for unrestricted airflow.
+   - **4 Vertical Cylinder Guide Pins ($\varnothing 6.0\text{ mm}$):** Located at the 4 internal corners of the drive slot, extending continuously from the base floor up to the top ($Z = 70.0\text{ mm}$).
+   - **Zero-Wobble Drive Constraint:** The inner tangent distance between the left and right pins is precisely **$14.8\text{ mm}$** ($0.4\text{ mm}$ clearance on each side of the $14.0\text{ mm}$ drive).
+   - **Generous 5.0 mm Air Gap on Both Sides:** Rather than resting flush against the honeycomb walls, the drive is held centered with a continuous **$5.0\text{ mm}$ air gap on each side**, allowing massive cross-ventilation across both large aluminium/plastic drive surfaces.
 
 2. **Internal Fastening System (Inside Washer & Nut Recesses):**
-   - **Screw Head & Washer Seat (Left Pillar):** $\varnothing 7.5\text{ mm}$ circular counterbore ($2.5\text{ mm}$ deep) on the **inside** face of the pillar ($Y = 6.0\text{ mm}$). Accommodates a standard DIN 125 M3 washer ($\varnothing 7.0\text{ mm}$) and socket/button head screw completely flush inside the vertical window opening.
-   - **Captive Hex Nut Pocket (Right Pillar):** $5.6\text{ mm}$ across flats ($2.6\text{ mm}$ deep) with washer recess ($0.8\text{ mm}$ deep) on the **inside** face ($Y = 16.8\text{ mm}$).
-   - **100% Flat Exterior Mating Faces:** On both outside walls ($Y = 0$ and $Y = 22.8\text{ mm}$), there are **zero counterbores** — only clean $\varnothing 3.4\text{ mm}$ through-holes. When modules are joined side-by-side, their exterior walls mate completely flush with zero gap.
+   - **Screw Head & Washer Seat (Left Pillar):** $\varnothing 7.5\text{ mm}$ circular counterbore ($2.5\text{ mm}$ deep) on the **inside** face of the pillar ($Y = 6.0\text{ mm}$). Fits standard DIN 125 M3 washers ($\varnothing 7.0\text{ mm}$) and socket/button head screws completely flush inside the vertical window opening.
+   - **Captive Hex Nut Pocket (Right Pillar):** $5.6\text{ mm}$ across flats ($2.6\text{ mm}$ deep) with washer recess ($0.8\text{ mm}$ deep) on the **inside** face ($Y = 26.8\text{ mm}$).
+   - **100% Flat Exterior Mating Faces:** Both outside walls ($Y = 0$ and $Y = 32.8\text{ mm}$) have **zero counterbores** — only clean $\varnothing 3.4\text{ mm}$ through-holes. When modules are joined side-by-side, their exterior walls mate completely flush with zero gap.
    - **Internal Assembly:** All screws, washers, and nuts are inserted and tightened from **inside** each bay.
 
 3. **Optimized Cross-Ventilation:**
    - Full-height isometric honeycomb lattice (7 rows, 38 mm cell diagonal) on both large side walls for passive cross-ventilation.
-   - Bottom chimney through-floor vent ($58.0 \times 10.8\text{ mm}$) for natural convective airflow.
+   - Bottom chimney through-floor vent ($63.0 \times 20.8\text{ mm}$) for natural convective vertical airflow.
 
 ---
 
 ## Dimensions Summary
 
-| Parameter | Drive Size | Internal Slot | External Footprint | Clearance / Tolerance |
+| Parameter | Drive Size | Internal Slot / Pins | External Footprint | Clearance / Tolerance |
 | :--- | :---: | :---: | :---: | :--- |
 | **Length (X axis)** | **$78.0\text{ mm}$** | **$79.0\text{ mm}$** | **$89.0\text{ mm}$** | $+0.5\text{ mm}$ per end ($1.0\text{ mm}$ total) for smooth insertion |
-| **Width / Depth (Y axis)** | **$14.0\text{ mm}$** | **$14.8\text{ mm}$** | **$22.8\text{ mm}$** | $+0.4\text{ mm}$ per side ($0.8\text{ mm}$ total) for snug upright fit |
+| **Width / Depth (Y axis)** | **$14.0\text{ mm}$** | **$24.8\text{ mm}$ slot**<br>($14.8\text{ mm}$ between pins) | **$32.8\text{ mm}$** | $+0.4\text{ mm}$ per side between pins; **$5.0\text{ mm}$ air gap** to each wall |
 | **Height (Z axis)** | ~125 mm | Open top | **$70.0\text{ mm}$** | High lateral stability |
 | **Side Wall Thickness** | — | — | **$4.0\text{ mm}$** | Solid perimeters (4 wall loops) |
 | **Floor Thickness** | — | — | **$3.5\text{ mm}$** | Rigid base with chimney vent |
-| **Front / Rear Pillars** | — | — | **$5.0\text{ mm}$ each** | Housing dual-level M3 joining holes |
+| **Guide Pins** | — | **$4 \times \varnothing 6.0\text{ mm}$** | — | Full height vertical cylinders |
 | **Mounting Levels** | — | — | **$Z = 20\text{ mm}$, $Z = 55\text{ mm}$** | Dual screw rigidity |
-
-> **Density Note:** At $22.8\text{ mm}$ pitch per bay, a 5-drive array occupies only **$114\text{ mm}$** of desktop width!
 
 ---
 
@@ -59,12 +58,12 @@ To connect two adjacent bays:
 - **Printer:** Flashforge Adventurer 5M Pro / Bambu Lab / Prusa (or any FDM printer)
 - **Nozzle:** $0.4\text{ mm}$
 - **Layer Height:** $0.20\text{ mm}$
-- **Wall Loops:** **4** (ensures 100% solid perimeters through the 4.0 mm walls and around screw holes)
+- **Wall Loops:** **4** (ensures 100% solid perimeters through the 4.0 mm walls, guide pins, and around screw holes)
 - **Top / Bottom Shells:** 4 layers
-- **Infill:** $15\text{--}20\%$ Gyroid (walls are solid with 4 perimeters)
-- **Supports:** **None required** (honeycombs and bridges are self-supporting)
-- **Print Time:** ~1h 09m
-- **Filament Consumption:** ~33.2 g
+- **Infill:** $15\text{--}20\%$ Gyroid
+- **Supports:** **None required** (honeycombs, vertical pins, and bridges are 100% self-supporting)
+- **Print Time:** ~1h 36m
+- **Filament Consumption:** ~43.2 g
 
 ---
 
@@ -74,11 +73,11 @@ Binary 3D models (`.stl`, `.3mf`, `.f3d`) cannot be diffed cleanly in Git. This 
 
 1. **OpenSCAD (`cad/modular_single_bay_70mm.scad`):**
    - Pure text-based CSG script.
-   - All dimensions (`drive_w`, `drive_t`, `slot_l`, `slot_t`, `caddy_h`, `m3_washer_dia`, etc.) are declared as parametric variables at the top of the file.
+   - All dimensions (`drive_w`, `drive_t`, `slot_l`, `slot_t`, `caddy_h`, `pin_r`, etc.) are declared as parametric variables at the top of the file.
    - Any modification will produce clear, line-by-line `git diff` outputs.
 2. **Fusion 360 Python Generator (`cad/generate_fusion360_model.py`):**
    - Standalone Python script for the Fusion 360 API.
-   - Fully parametric generation, appearance assignment, and automated export to STL and STEP.
+   - Fully parametric generation, appearance assignment, and automated export to STL.
 3. **Fusion MCP Client (`cad/fusion_client.py`):**
    - Lightweight JSON-RPC client to execute scripts and export models directly via Fusion 360 MCP.
 
@@ -89,11 +88,11 @@ Binary 3D models (`.stl`, `.3mf`, `.f3d`) cannot be diffed cleanly in Git. This 
 ```
 .
 ├── cad/
-│   ├── modular_single_bay_70mm.scad      # Parametric OpenSCAD source (Git diff friendly)
+│   ├── modular_single_bay_70mm.scad      # Parametric OpenSCAD source with 4 guide pins
 │   ├── generate_fusion360_model.py       # Parametric Fusion 360 API generator
 │   └── fusion_client.py                  # Direct JSON-RPC client for Fusion MCP
 ├── models/
-│   └── Modular_SingleBay_70mm_Tight.stl  # Production STL model (89.0 x 22.8 x 70.0 mm)
+│   └── Modular_SingleBay_70mm_Tight.stl  # Production STL model (89.0 x 32.8 x 70.0 mm)
 ├── gcode/
 │   └── Modular_SingleBay_70mm_Tight.gcode # Print-ready G-code (Adventurer 5M Pro)
 ├── images/                               # 3D viewport renders and slicer plate preview
