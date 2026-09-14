@@ -218,15 +218,18 @@ def query_printer_sync(ip: str, port: int) -> Dict[str, Any]:
     return latest_state
 
 def send_gcode_command(cmd: str) -> str:
-    """Sends a single G-code / Flashforge command to printer TCP port"""
+    """Sends a single G-code / Flashforge command to printer TCP port with session release"""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(2.5)
         s.connect((PRINTER_IP, PRINTER_PORT))
         
-        # Gain control session first
+        # Release any stuck session then gain fresh control
+        s.sendall(b"~M602\r\n")
+        time.sleep(0.04)
+        s.recv(1024)
         s.sendall(b"~M601 S1\r\n")
-        time.sleep(0.05)
+        time.sleep(0.04)
         s.recv(1024)
         
         formatted_cmd = cmd.strip()
@@ -238,10 +241,63 @@ def send_gcode_command(cmd: str) -> str:
         s.sendall(formatted_cmd.encode("ascii"))
         time.sleep(0.08)
         resp = s.recv(2048).decode("latin1", errors="ignore")
+        
+        # Cleanly release session
+        try:
+            s.sendall(b"~M602\r\n")
+            time.sleep(0.02)
+        except Exception:
+            pass
+            
         s.close()
         return resp.strip()
     except Exception as e:
         return f"Error: {e}"
+
+def set_chamber_led_sync(turn_on: bool) -> bool:
+    """Sends both M146 (RGB) and M651/M652 to ensure full hardware state toggle"""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2.5)
+        s.connect((PRINTER_IP, PRINTER_PORT))
+        
+        # Release then gain control
+        s.sendall(b"~M602\r\n")
+        time.sleep(0.03)
+        s.recv(1024)
+        s.sendall(b"~M601 S1\r\n")
+        time.sleep(0.03)
+        s.recv(1024)
+        
+        if turn_on:
+            s.sendall(b"~M146 r255 g255 b255\r\n")
+            time.sleep(0.04)
+            s.recv(1024)
+            s.sendall(b"~M651\r\n")
+            time.sleep(0.04)
+            s.recv(1024)
+        else:
+            s.sendall(b"~M146 r0 g0 b0\r\n")
+            time.sleep(0.04)
+            s.recv(1024)
+            s.sendall(b"~M652\r\n")
+            time.sleep(0.04)
+            s.recv(1024)
+            
+        s.sendall(b"~M119\r\n")
+        time.sleep(0.05)
+        resp = s.recv(1024).decode("latin1", errors="ignore")
+        
+        s.sendall(b"~M602\r\n")
+        s.close()
+        
+        m_led = re.search(r"LED:\s*(\d+)", resp)
+        if m_led:
+            return m_led.group(1) == "1"
+        return turn_on
+    except Exception as e:
+        print("set_chamber_led_sync error:", e)
+        return turn_on
 
 async def printer_poll_loop():
     while True:
@@ -307,11 +363,11 @@ async def get_status():
 async def toggle_led():
     # Toggle LED
     current = latest_state.get("led_on", False)
-    target_cmd = "~M652" if current else "~M651" # M651 is on, M652 is off in Flashforge
-    resp = await asyncio.to_thread(send_gcode_command, target_cmd)
+    new_state = not current
+    actual_state = await asyncio.to_thread(set_chamber_led_sync, new_state)
+    latest_state["led_on"] = actual_state
     
-    # Wait briefly and refresh status from printer
-    await asyncio.sleep(0.1)
+    # Refresh status from printer
     state = await asyncio.to_thread(query_printer_sync, PRINTER_IP, PRINTER_PORT)
     
     # Broadcast refreshed state immediately to all websockets
@@ -326,11 +382,37 @@ async def toggle_led():
             if ws in connected_websockets:
                 connected_websockets.remove(ws)
                 
-    return {"status": "ok", "response": resp, "led_on": state.get("led_on", not current)}
+    return {"status": "ok", "led_on": actual_state}
+
+@app.post("/api/control/poweroff")
+async def power_off():
+    """Turns off heaters, heated bed, cooling fans, LED, and disables stepper motors (full silent sleep / standby)"""
+    # M104 S0 (nozzle 0), M140 S0 (bed 0), M106 S0 (fans 0), M107 (part fan off), M84 (steppers off), M81 (power down)
+    shutdown_script = (
+        "~M104 S0\r\n"
+        "~M140 S0\r\n"
+        "~M106 S0\r\n"
+        "~M107\r\n"
+        "~M146 r0 g0 b0\r\n"
+        "~M652\r\n"
+        "~M84\r\n"
+        "~M81\r\n"
+    )
+    resp = await asyncio.to_thread(send_gcode_command, shutdown_script)
+    await asyncio.to_thread(set_chamber_led_sync, False)
+    latest_state["led_on"] = False
+    latest_state["nozzle_target"] = 0.0
+    latest_state["bed_target"] = 0.0
+    return {"status": "ok", "response": resp, "message": "Printer put into sleep/standby mode (heaters, motors, fans, and LED turned off)"}
 
 @app.post("/api/control/pause")
 async def pause_print():
     resp = await asyncio.to_thread(send_gcode_command, "~M25")
+    return {"status": "ok", "response": resp}
+
+@app.post("/api/control/resume")
+async def resume_print():
+    resp = await asyncio.to_thread(send_gcode_command, "~M24")
     return {"status": "ok", "response": resp}
 
 @app.post("/api/record/start")
