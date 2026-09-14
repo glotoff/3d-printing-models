@@ -386,6 +386,7 @@ async def stop_recording():
         return {"status": "not_recording"}
 
     saved_file = recording_info["filename"]
+    saved_path = recording_info.get("filepath", "")
     try:
         if recording_proc:
             recording_proc.terminate()
@@ -399,12 +400,22 @@ async def stop_recording():
         recording_proc = None
         recording_info["is_recording"] = False
         recording_info["filename"] = None
+        recording_info["filepath"] = None
         recording_info["start_time"] = 0
         recording_info["duration"] = 0
         latest_state["recording"] = {
             "is_recording": False,
             "filename": None,
             "duration": 0
+        }
+
+    # Verify if file was created on disk
+    file_exists = os.path.exists(saved_path) and os.path.getsize(saved_path) > 1024
+    if not file_exists:
+        return {
+            "status": "recording_empty",
+            "saved_filename": saved_file,
+            "message": "Recording stopped, but no video frames were received from the camera stream. Please ensure the printer camera is toggled ON in the printer settings."
         }
 
     return {"status": "recording_stopped", "saved_filename": saved_file}

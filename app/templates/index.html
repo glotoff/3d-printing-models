@@ -497,6 +497,9 @@
         const res = await fetch(endpoint, { method: 'POST' });
         const data = await res.json();
         console.log("Recording response:", data);
+        if (data.status === "recording_empty" && data.message) {
+          alert(data.message);
+        }
         setTimeout(fetchRecordings, 1000);
       } catch (e) {
         console.error("Recording action failed:", e);
